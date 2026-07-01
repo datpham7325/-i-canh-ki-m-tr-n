@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Đại Canh Kiếm Trận - Song Thủ</title>
+<title>Đại Canh Kiếm Trận - Song Thủ Fix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Serif+SC:wght@400;600;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -315,7 +315,6 @@
       storeJitterR: 8 + Math.random()*14,
       storeJitterSeed: Math.random()*1000,
       stowed: false,
-      // Dành riêng cho chế độ tấn công luồng liên tục
       attackProgress: -1 
     });
   }
@@ -339,7 +338,6 @@
     return { x: cx+Math.cos(angle)*r, y: cy+Math.sin(angle)*r, facing: angle };
   }
 
-  // Toạ độ chuột hoặc điều khiển tay ảo
   let mx = window.innerWidth/2, my = window.innerHeight/2;
   let prevMx = mx, prevMy = my;
   let mouseVelX = 0, mouseVelY = 0;
@@ -354,9 +352,9 @@
   let illusionOn = false;
   let lightningOn = true;
 
-  // Biến quản lý trạng thái camera song thủ
-  let rightHandPos = null; // {x, y, gesture}
-  let leftHandPos = null;  // {x, y, gesture}
+  // Quản lý toạ độ song thủ toàn cục
+  let rightHandPos = null; 
+  let leftHandPos = null;  
   let isMegaSword = false;
 
   function resetModeButtons(){
@@ -577,7 +575,6 @@
     ctx.fillStyle = 'rgba(5,8,10,0.20)';
     ctx.fillRect(0, 0, W, H);
 
-    // Xác định tâm hội tụ (Mặc định dùng chuột hoặc dùng tay phải nếu có camera)
     let targetX = mx, targetY = my;
     let handActive = dragging;
 
@@ -587,7 +584,6 @@
       handActive = true;
     }
 
-    // Hiệu ứng vòng tròn phát sáng khi hội tụ kiếm
     if (handActive && !isMegaSword){
       const rGlow = 30 + Math.sin(timeSec*4)*4;
       const g = ctx.createRadialGradient(targetX, targetY, 0, targetX, targetY, rGlow);
@@ -610,7 +606,6 @@
     const storedMaxSpeed = 5.5, storedMaxForce = 0.5;
     const formationMaxSpeed = 6.2, formationMaxForce = 0.42;
 
-    // Kiểm tra trạng thái KÍCH HOẠT LUỒNG KIẾM TẤN CÔNG (Cả 2 tay cùng giơ 2 ngón)
     const isAttackStream = (rightHandPos && leftHandPos && rightHandPos.gesture === 'point' && leftHandPos.gesture === 'point');
 
     for (let i = 0; i < activeCount; i++){
@@ -621,50 +616,37 @@
       let customLength = s.style.length;
       let customWidth = s.style.width;
 
-      // CHẾ ĐỘ 1: HỢP THỂ ĐẠI KIẾM (Cả 2 tay cùng nắm đấm)
       if (isMegaSword && rightHandPos && leftHandPos) {
         s.flingActive = false;
         s.attackProgress = -1;
 
-        // Tính toán vector trục dọc của đại kiếm nối từ tay phải đến tay trái
         const dx = leftHandPos.x - rightHandPos.x;
         const dy = leftHandPos.y - rightHandPos.y;
         const baseAngle = Math.atan2(dy, dx);
         const distance = Math.hypot(dx, dy);
 
-        // Xếp 72 thanh kiếm khít nhau dọc theo thân đại kiếm
-        const offsetRatio = (i / activeCount); // Trải dài từ 0 đến 1
+        const offsetRatio = (i / activeCount); 
         const swordDist = offsetRatio * distance * 1.5; 
 
-        const targetX = rightHandPos.x + Math.cos(baseAngle) * swordDist;
-        const targetY = rightHandPos.y + Math.sin(baseAngle) * swordDist;
+        const tx = rightHandPos.x + Math.cos(baseAngle) * swordDist;
+        const ty = rightHandPos.y + Math.sin(baseAngle) * swordDist;
 
-        // Tăng kích thước mỗi thanh để đại kiếm trông khổng lồ
         customLength = s.style.length * 2.5;
         customWidth = s.style.width * 2.0;
 
-        let dX = (targetX - s.x) * 0.25, dY = (targetY - s.y) * 0.25;
+        let dX = (tx - s.x) * 0.25, dY = (ty - s.y) * 0.25;
         [dX, dY] = clampMag(dX, dY, 15);
         desiredX = dX; desiredY = dY;
         maxSpeed = 15; maxForce = 1.5;
         forceCustomAngle = baseAngle;
 
-      // CHẾ ĐỘ 2: LUỒNG KIẾM TẤN CÔNG LIÊN TỤC (Phóng từ Tay Phải sang Tay Trái)
       } else if (isAttackStream) {
         s.flingActive = false;
-        
-        // Nếu kiếm chưa nằm trong luồng bay, khởi tạo tiến trình ngẫu nhiên rải rác
-        if (s.attackProgress < 0) {
-          s.attackProgress = Math.random(); 
-        }
+        if (s.attackProgress < 0) s.attackProgress = Math.random(); 
 
-        // Tăng tiến trình bay nhanh dần đều
         s.attackProgress += 0.04; 
-        if (s.attackProgress > 1) {
-          s.attackProgress = 0; // Bay hết tầm quay lại điểm xuất phát từ tay phải
-        }
+        if (s.attackProgress > 1) s.attackProgress = 0; 
 
-        // Tạo một chút nhiễu sóng sin để luồng bay có hiệu ứng uốn lượn đẹp mắt
         const progress = s.attackProgress;
         const wave = Math.sin(progress * Math.PI * 2 + i) * 35;
 
@@ -681,7 +663,6 @@
         maxSpeed = 16; maxForce = 1.2;
         forceCustomAngle = angle;
 
-      // CHẾ ĐỘ 3: HỘI TỤ QUANH TAY PHẢI TRỎ PHÁP (Hoặc chuột kéo)
       } else if (handActive) {
         s.flingActive = false;
         s.attackProgress = -1;
@@ -694,7 +675,6 @@
         desiredX = dX; desiredY = dY;
         maxSpeed = convergeMaxSpeed; maxForce = convergeMaxForce;
 
-      // CHẾ ĐỘ MẶC ĐỊNH: Quăng kiếm bằng quán tính / Nhập túi / Trận pháp / Tự do
       } else {
         s.attackProgress = -1;
         if (s.flingActive){
@@ -737,7 +717,6 @@
         }
       }
 
-      // Cập nhật chuyển động vật lý (Steering Behaviors)
       let steerX = desiredX - s.vx, steerY = desiredY - s.vy;
       [steerX, steerY] = clampMag(steerX, steerY, maxForce);
       s.vx += steerX; s.vy += steerY;
@@ -747,7 +726,6 @@
       if (s.x < -40) s.x = -40; if (s.x > W+40) s.x = W+40;
       if (s.y < -40) s.y = -40; if (s.y > H+40) s.y = H+40;
 
-      // Xử lý hướng xoay góc của kiếm
       if (forceCustomAngle !== null) {
         s.angle = forceCustomAngle;
       } else {
@@ -766,7 +744,6 @@
         }
       }
 
-      // Hiệu ứng phóng sét ngẫu nhiên quanh thân kiếm
       const speedMag = Math.hypot(s.vx, s.vy);
       const chance = 0.004 + Math.min(speedMag, 10) * 0.0009;
       if (lightningOn && Math.random() < chance){
@@ -782,7 +759,6 @@
         const lenMul = handActive ? 1.1 : 1;
         const alphaNow = Math.min(1, flicker);
 
-        // Hiệu ứng phân thân Huyễn Hóa (Illusion)
         if (illusionOn){
           for (let k = 0; k < 2; k++){
             const side = k === 0 ? 1 : -1;
@@ -804,7 +780,6 @@
     requestAnimationFrame(frame);
   }
 
-  // ---- XỬ LÝ CAMERA SONG THỦ (MediaPipe Hand Landmarker 2 Hands) ----
   const handBtn = document.getElementById('handBtn');
   const handPanel = document.getElementById('handPanel');
   const handVideo = document.getElementById('handVideo');
@@ -822,6 +797,7 @@
   let handStream = null;
   let handTrackingOn = false;
   let handRAFId = null;
+  let lastGesture = 'none';
 
   function handDist(a, b){ return Math.hypot(a.x - b.x, a.y - b.y); }
   function fingerExtended(lm, tipI, pipI, mcpI){
@@ -835,10 +811,10 @@
     const mid = fingerExtended(lm, 12, 10, 9);
     const ring = fingerExtended(lm, 16, 14, 13);
     const pinky = fingerExtended(lm, 20, 18, 17);
-    if (idx && mid && !ring && !pinky) return 'point';   // 2 ngón
-    if (idx && mid && ring && !pinky) return 'three';    // 3 ngón
-    if (idx && mid && ring && pinky) return 'palm';      // 5 ngón
-    if (!idx && !mid && !ring && !pinky) return 'fist';  // Nắm tay
+    if (idx && mid && !ring && !pinky) return 'point';   
+    if (idx && mid && ring && !pinky) return 'three';    
+    if (idx && mid && ring && pinky) return 'palm';      
+    if (!idx && !mid && !ring && !pinky) return 'fist';  
     return 'none';
   }
 
@@ -863,7 +839,7 @@
         delegate: 'GPU'
       },
       runningMode: 'VIDEO',
-      numHands: 2 // Theo dõi cùng lúc 2 tay
+      numHands: 2 
     });
   }
 
@@ -884,56 +860,60 @@
 
     handOverlayCtx.clearRect(0, 0, handOverlay.width, handOverlay.height);
 
-    // Reset dữ liệu tọa độ tay ảo của frame cũ
     rightHandPos = null;
     leftHandPos = null;
 
     if (result && result.landmarks && result.landmarks.length > 0){
+      let tempHands = [];
       
-      // Phân chia nhãn Tay Trái / Tay Phải dựa theo phân vùng toạ độ trục X màn hình thực tế
       result.landmarks.forEach((lm) => {
         drawHandSkeleton(lm);
         const gesture = detectGesture(lm);
-
-        // Tính toán tâm điều khiển ảo dựa vào khớp ngón giữa
         const nx = lm[9].x; 
         const ny = lm[9].y;
-
-        // Áp dụng thuật toán lật gương (1 - nx) giúp khớp chuyển động thật ngoài đời
-        const screenX = (1 - nx) * W;
+        const screenX = (1 - nx) * W; 
         const screenY = ny * H;
-
-        // Nếu tay nằm ở nửa phải màn hình -> Nhận làm Tay Phải
-        if (screenX > W / 2) {
-          rightHandPos = { x: screenX, y: screenY, gesture: gesture };
-        } else { // Nửa trái màn hình -> Nhận làm Tay Trái
-          leftHandPos = { x: screenX, y: screenY, gesture: gesture };
-        }
-
-        // BẤT KỲ TAY NÀO GIƠ 3 NGÓN: Bật/tắt trạng thái Huyễn Hóa
-        if (gesture === 'three') {
-          illusionOn = !illusionOn;
-          illusionBtn.classList.toggle('active', illusionOn);
-        }
+        tempHands.push({ x: screenX, y: screenY, gesture: gesture });
       });
 
-      // KIỂM TRA TRẠNG THÁI KHỞI ĐỘNG CHIÊU THỨC PHỐI HỢP SONG THỦ
+      // Sắp xếp động các tay theo toạ độ trục X màn hình thực tế (Tránh lỗi lật gương)
+      tempHands.sort((a, b) => b.x - a.x);
+
+      if (tempHands.length === 1) {
+        rightHandPos = tempHands[0];
+      } else if (tempHands.length >= 2) {
+        rightHandPos = tempHands[0]; // Tay nằm bên phải màn hình hơn
+        leftHandPos = tempHands[1];  // Tay nằm bên trái màn hình hơn
+      }
+
+      // Xử lý chống trùng lặp frame cho cử chỉ 3 ngón bật Huyễn Hóa
+      let currentFrameGesture = rightHandPos ? rightHandPos.gesture : 'none';
+      if (leftHandPos && leftHandPos.gesture === 'three') currentFrameGesture = 'three';
+      if (rightHandPos && rightHandPos.gesture === 'three') currentFrameGesture = 'three';
+
+      if (currentFrameGesture === 'three' && lastGesture !== 'three') {
+        illusionOn = !illusionOn;
+        illusionBtn.classList.toggle('active', illusionOn);
+      }
+      lastGesture = currentFrameGesture;
+
+      // Kích hoạt chiêu thức song thủ phối hợp
       if (rightHandPos && leftHandPos && rightHandPos.gesture === 'fist' && leftHandPos.gesture === 'fist') {
         isMegaSword = true;
         handStatus.textContent = '⚔️ SONG THỦ HỢP THỂ ĐẠI KIẾM';
       } else {
         isMegaSword = false;
-        
         if (rightHandPos && leftHandPos && rightHandPos.gesture === 'point' && leftHandPos.gesture === 'point') {
           handStatus.textContent = '⚡ LUỒNG KIẾM LIÊN TỤC CÔNG KÍCH';
         } else if (rightHandPos && rightHandPos.gesture === 'point') {
           handStatus.textContent = '☝️ HỘI TỤ KIẾM (TAY PHẢI)';
         } else {
-          handStatus.textContent = '🖐 Đang chờ cử chỉ ngự kiếm...';
+          handStatus.textContent = '🖐 Đang nhận diện cử chỉ ngự kiếm...';
         }
       }
     } else {
       isMegaSword = false;
+      lastGesture = 'none';
       handStatus.textContent = 'Không thấy tay trong khung hình';
     }
 
@@ -951,7 +931,7 @@
       handVideo.srcObject = handStream;
       await handVideo.play();
       handTrackingOn = true;
-      handStatus.textContent = 'Đưa 2 tay vào để kích hoạt trận pháp...';
+      handStatus.textContent = 'Đưa cả 2 tay vào khung hình...';
       handLoop();
     } catch(err){
       handStatus.textContent = 'Không mở được camera: ' + err.message;
@@ -972,6 +952,7 @@
     rightHandPos = null;
     leftHandPos = null;
     isMegaSword = false;
+    lastGesture = 'none';
     updateStateTag();
   }
 
