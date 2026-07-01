@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Đại Canh Kiếm Trận</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Serif+SC:wght@400;600;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void: #05080a;
+    --bamboo-light: #cdeeb0;
+    --bamboo-mid: #6fbf5f;
+    --bamboo-dark: #1d3d20;
+    --gold: #e3b44a;
+    --gold-bright: #ffe27a;
+    --muted: #8fa08d;
+  }
+  *{ box-sizing: border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
+  html, body{
+    width:100%; height:100%;
+    background: var(--void);
+    overflow: hidden;
+    font-family: 'Cormorant Garamond', serif;
+    color: var(--bamboo-light);
+    -webkit-user-select: none; user-select: none;
+    overscroll-behavior: none;
+  }
+  #stage{
+    position:relative;
+    width:100vw; height:100vh; height:100dvh;
+  }
+  canvas{
+    position:absolute; inset:0;
+    display:block;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .veil{
+    position:absolute; inset:0;
+    pointer-events:none;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 40%, rgba(111,191,95,0.07), transparent 70%),
+      radial-gradient(ellipse 120% 100% at 50% 100%, rgba(0,0,0,0.55), transparent 60%);
+  }
+  .hud{
+    position:absolute; inset:0;
+    pointer-events:none;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    padding: max(3.5vh, env(safe-area-inset-top) + 14px) max(5vw, env(safe-area-inset-right) + 14px) max(3vh, env(safe-area-inset-bottom) + 14px) max(5vw, env(safe-area-inset-left) + 14px);
+    z-index: 5;
+    gap: 12px;
+  }
+  .top-row{
+    display:flex; justify-content:space-between; align-items:flex-start;
+    gap: 10px; flex-wrap: wrap;
+  }
+  .title-block{ display:flex; flex-direction:column; gap: 3px; min-width: 0; }
+  .zh{
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 900;
+    font-size: clamp(14px, 2.4vw, 26px);
+    letter-spacing: 0.28em;
+    color: var(--muted);
+    opacity: 0.55;
+    white-space: nowrap;
+  }
+  .vn{
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: clamp(17px, 4.4vw, 38px);
+    letter-spacing: 0.08em;
+    background: linear-gradient(120deg, var(--bamboo-light) 15%, var(--bamboo-mid) 55%, var(--gold) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 30px rgba(111,191,95,0.25);
+    line-height: 1.15;
+  }
+  .counter{ text-align:right; font-family:'Cinzel', serif; letter-spacing: 0.18em; flex-shrink:0; }
+  .counter .num{
+    font-size: clamp(24px, 6vw, 50px);
+    color: var(--bamboo-light);
+    line-height: 1;
+    text-shadow: 0 0 22px rgba(227,180,74,0.35);
+    font-variant-numeric: tabular-nums;
+  }
+  .counter .lbl{
+    font-size: 10px; color: var(--gold); letter-spacing: 0.3em; text-transform: uppercase;
+  }
+  .bottom-block{ display:flex; flex-direction:column; gap: 12px; align-items:center; }
+  .footer-row{
+    display:flex; justify-content: space-between; align-items:flex-end; gap: 16px;
+    width: 100%;
+  }
+  .instruction{
+    font-size: clamp(11.5px, 2.6vw, 15px);
+    color: var(--muted);
+    letter-spacing: 0.02em;
+    max-width: min(62vw, 360px);
+    line-height: 1.42;
+    font-style: italic;
+  }
+  .instruction b{ color: var(--bamboo-light); font-style: normal; font-weight: 600; letter-spacing: 0.06em; }
+  .state-tag{
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    opacity: 0.9;
+    padding: 6px 12px;
+    border: 1px solid rgba(227,180,74,0.35);
+    border-radius: 2px;
+    transition: all 0.4s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .state-tag.active{
+    color: var(--void);
+    background: var(--bamboo-mid);
+    border-color: var(--bamboo-mid);
+    box-shadow: 0 0 24px rgba(111,191,95,0.55);
+  }
+  .controls{
+    pointer-events:auto;
+    display:flex; flex-wrap: wrap; justify-content:center; gap: 8px;
+    max-width: 100%;
+  }
+  .ctrl-btn{
+    pointer-events:auto;
+    cursor:pointer;
+    background: rgba(10,16,10,0.6);
+    border:1px solid rgba(227,180,74,0.4);
+    color: var(--gold);
+    font-family:'Cinzel',serif;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    font-size: clamp(9.5px, 2.4vw, 12px);
+    padding: 10px 14px;
+    border-radius:3px;
+    transition: all .25s ease;
+    backdrop-filter: blur(6px);
+    white-space: nowrap;
+  }
+  .ctrl-btn:hover{ background: rgba(227,180,74,0.14); box-shadow:0 0 16px rgba(227,180,74,0.35); }
+  .ctrl-btn.active{
+    background: var(--gold);
+    color: var(--void);
+    box-shadow:0 0 22px rgba(227,180,74,0.6);
+  }
+  @media (max-width: 520px){
+    .footer-row{ flex-direction: column; align-items:center; text-align:center; gap: 8px; }
+    .instruction{ max-width: 92vw; }
+    .top-row{ flex-direction: row; }
+  }
+  @media (max-width: 380px){
+    .ctrl-btn{ padding: 9px 10px; }
+  }
+  .hand-panel{
+    position:absolute;
+    right: max(4vw, env(safe-area-inset-right) + 12px);
+    bottom: max(3vh, env(safe-area-inset-bottom) + 12px);
+    z-index: 8;
+    width: 168px;
+    display:none;
+    flex-direction:column;
+    gap:6px;
+    pointer-events:none;
+  }
+  .hand-panel.show{ display:flex; }
+  .hand-frame{
+    position:relative;
+    width:100%;
+    aspect-ratio: 4/3;
+    border-radius:6px;
+    overflow:hidden;
+    border:1px solid rgba(227,180,74,0.45);
+    background:#000;
+    box-shadow: 0 0 26px rgba(0,0,0,0.5), 0 0 18px rgba(111,191,95,0.25);
+  }
+  .hand-frame video, .hand-frame canvas{
+    position:absolute; inset:0;
+    width:100%; height:100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+  }
+  .hand-status{
+    font-family:'Cinzel', serif;
+    font-size: 10.5px;
+    letter-spacing:0.08em;
+    text-align:center;
+    color: var(--gold);
+    background: rgba(5,8,10,0.55);
+    border:1px solid rgba(227,180,74,0.3);
+    border-radius:3px;
+    padding: 5px 6px;
+    backdrop-filter: blur(4px);
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="veil"></div>
+  <div class="hud">
+    <div class="top-row">
+      <div class="title-block">
+        <span class="zh">凡人修仙傳</span>
+        <span class="vn">ĐẠI CANH KIẾM TRẬN</span>
+      </div>
+      <div class="counter">
+        <div class="num" id="swordCount">72</div>
+        <div class="lbl">phi kiếm</div>
+      </div>
+    </div>
+    <div class="bottom-block">
+      <div class="footer-row">
+        <p class="instruction"><b>Giữ chuột &amp; kéo</b> để triệu kiếm hội tụ quanh tay bạn. Buông ra, kiếm phóng theo hướng vung tay. Dùng <b>Túi Trữ Vật</b> để thu kiếm, hoặc <b>Trận Đồng Tâm</b> để sắp trận. Bật <b>Ngự Kiếm (Camera)</b> để dùng tay thật: <b>2 ngón trỏ+giữa</b> = hội tụ kiếm, <b>3 ngón</b> = huyễn hóa, <b>xòe 5 ngón</b> = trận pháp, <b>nắm tay</b> = thu vào túi.</p>
+        <div class="state-tag" id="stateTag">TỰ DO</div>
+      </div>
+      <div class="controls">
+        <button id="storeBtn" class="ctrl-btn">🎒 Túi Trữ Vật</button>
+        <button id="changeFormBtn" class="ctrl-btn">☯ Trận Đồng Tâm</button>
+        <button id="countBtn" class="ctrl-btn">⚔ 72 Kiếm</button>
+        <button id="illusionBtn" class="ctrl-btn">👻 Huyễn Hóa</button>
+        <button id="lightningBtn" class="ctrl-btn active">⚡ Phóng Sét</button>
+        <button id="handBtn" class="ctrl-btn">📷 Ngự Kiếm (Camera)</button>
+      </div>
+    </div>
+  </div>
+  <div class="hand-panel" id="handPanel">
+    <div class="hand-frame">
+      <video id="handVideo" autoplay playsinline muted></video>
+      <canvas id="handOverlay"></canvas>
+    </div>
+    <div class="hand-status" id="handStatus">Đang khởi động camera...</div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+  const stateTag = document.getElementById('stateTag');
+  const swordCountEl = document.getElementById('swordCount');
+  const storeBtn = document.getElementById('storeBtn');
+  const changeFormBtn = document.getElementById('changeFormBtn');
+  const countBtn = document.getElementById('countBtn');
+  const illusionBtn = document.getElementById('illusionBtn');
+  const lightningBtn = document.getElementById('lightningBtn');
+
+  let W, H, DPR;
+  function resize(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * DPR;
+    canvas.height = H * DPR;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  function noise1D(t, seed){
+    return Math.sin(t*0.6 + seed) * 0.5
+         + Math.sin(t*1.37 + seed*2.13) * 0.3
+         + Math.sin(t*2.31 + seed*3.7) * 0.2;
+  }
+  function lerp(a,b,f){ return a + (b-a)*f; }
+  function clampMag(x,y,max){
+    const m = Math.hypot(x,y);
+    if (m > max){ const k = max/m; return [x*k, y*k]; }
+    return [x,y];
+  }
+
+  // ---- Green bamboo-with-gold-vein palettes ----
+  const PALETTES = [
+    { core:'#eaffd8', edge:'#2f6b3c', vein:'#f3c04d', glow:'rgba(140,255,130,0.55)' },
+    { core:'#d8f5c2', edge:'#1f4d2b', vein:'#e0b23f', glow:'rgba(90,200,90,0.50)' },
+    { core:'#c8ecb0', edge:'#123a20', vein:'#c99a34', glow:'rgba(60,150,70,0.45)' }
+  ];
+  const STYLES = [
+    { length: 52, width: 3.4, paletteIdx: 0 },
+    { length: 45, width: 2.9, paletteIdx: 1 },
+    { length: 37, width: 2.3, paletteIdx: 2 }
+  ];
+
+  const TOTAL = 72;
+  const swords = [];
+  for (let i = 0; i < TOTAL; i++){
+    const style = STYLES[i % STYLES.length];
+    swords.push({
+      style,
+      x: Math.random()*window.innerWidth,
+      y: Math.random()*window.innerHeight,
+      vx: 0, vy: 0,
+      angle: Math.random()*Math.PI*2,
+      idleSpeed: 1.1 + Math.random()*1.6,
+      seedA: Math.random()*1000,
+      seedB: Math.random()*1000,
+      seedC: Math.random()*1000,
+      orbitRadius: 60 + Math.random()*Math.min(window.innerWidth, window.innerHeight)*0.42,
+      orbitAngle0: Math.random()*Math.PI*2,
+      orbitSpeed: (0.35 + Math.random()*0.55) * (Math.random() < 0.5 ? 1 : -1),
+      radiusNoiseAmp: 18 + Math.random()*34,
+      angleNoiseAmp: 0.35 + Math.random()*0.5,
+      flicker: 0.6 + Math.random()*0.4,
+      flingActive: false, flingDirX: 0, flingDirY: 0, flingSpeed: 0,
+      frictionFactor: 0.945 + Math.random()*0.02,
+      storeJitterR: 8 + Math.random()*14,
+      storeJitterSeed: Math.random()*1000,
+      stowed: false
+    });
+  }
+  swordCountEl.textContent = swords.length;
+
+  const FORMATIONS = [
+    { name: 'Đồng Tâm', calc: calcConcentric }
+  ];
+  function calcConcentric(i, tSec, cx, cy, minDim, count){
+    const ring0N = Math.max(1, Math.round(count * 8/72));
+    const ring1N = Math.max(1, Math.round(count * 24/72));
+    const ring2N = Math.max(1, count - ring0N - ring1N);
+    let ringIdx, within, ringN;
+    if (i<ring0N){ ringIdx=0; within=i; ringN=ring0N; }
+    else if (i<ring0N+ring1N){ ringIdx=1; within=i-ring0N; ringN=ring1N; }
+    else { ringIdx=2; within=i-ring0N-ring1N; ringN=ring2N; }
+    const radii = [0.12,0.22,0.34];
+    const speeds = [0.5,-0.3,0.2];
+    const angle = (within/ringN)*Math.PI*2 + tSec*speeds[ringIdx];
+    const r = radii[ringIdx]*minDim;
+    return { x: cx+Math.cos(angle)*r, y: cy+Math.sin(angle)*r, facing: angle };
+  }
+
+  let mx = window.innerWidth/2, my = window.innerHeight/2;
+  let prevMx = mx, prevMy = my;
+  let mouseVelX = 0, mouseVelY = 0;
+  let dragging = false;
+  let idleMode = 'free';
+  let formationIndex = 0;
+  let t = 0;
+
+  const COUNT_MODES = [18, 36, 72];
+  let countIndex = COUNT_MODES.length - 1;
+  let activeCount = COUNT_MODES[countIndex];
+  let illusionOn = false;
+  let lightningOn = true;
+
+  function resetModeButtons(){
+    storeBtn.classList.remove('active'); storeBtn.textContent = '🎒 Túi Trữ Vật';
+    changeFormBtn.classList.remove('active');
+  }
+
+  function updateStateTag(){
+    if (dragging){
+      stateTag.textContent = 'NGỰ KIẾM';
+      stateTag.classList.add('active');
+      return;
+    }
+    stateTag.classList.remove('active');
+    if (idleMode === 'stored') stateTag.textContent = 'NHẬP TÚI';
+    else if (idleMode === 'formation') stateTag.textContent = FORMATIONS[formationIndex].name.toUpperCase();
+    else stateTag.textContent = 'TỰ DO';
+  }
+
+  function pointerDown(x, y){
+    dragging = true;
+    mx = x; my = y; prevMx = x; prevMy = y;
+    mouseVelX = 0; mouseVelY = 0;
+    updateStateTag();
+  }
+  function pointerMove(x, y){
+    if (dragging){
+      mouseVelX = lerp(mouseVelX, x - prevMx, 0.5);
+      mouseVelY = lerp(mouseVelY, y - prevMy, 0.5);
+      prevMx = mx; prevMy = my;
+    }
+    mx = x; my = y;
+  }
+  function pointerUp(){
+    if (dragging && idleMode === 'free'){
+      const spd = Math.hypot(mouseVelX, mouseVelY);
+      if (spd > 0.4){
+        const dirX = mouseVelX/spd, dirY = mouseVelY/spd;
+        const boostMag = Math.min(16, 5.5 + spd*0.75);
+        swords.slice(0, activeCount).forEach(s => {
+          const jitter = (Math.random()-0.5)*0.6;
+          const ca = Math.cos(jitter), sa = Math.sin(jitter);
+          s.flingDirX = dirX*ca - dirY*sa;
+          s.flingDirY = dirX*sa + dirY*ca;
+          s.flingSpeed = boostMag * (0.75 + Math.random()*0.5);
+          s.flingActive = true;
+        });
+      }
+    }
+    dragging = false;
+    updateStateTag();
+  }
+
+  canvas.addEventListener('mousedown', e => pointerDown(e.clientX, e.clientY));
+  window.addEventListener('mousemove', e => pointerMove(e.clientX, e.clientY));
+  window.addEventListener('mouseup', pointerUp);
+
+  canvas.addEventListener('touchstart', e => {
+    const touch = e.touches[0];
+    pointerDown(touch.clientX, touch.clientY);
+    e.preventDefault();
+  }, { passive:false });
+  canvas.addEventListener('touchmove', e => {
+    const touch = e.touches[0];
+    pointerMove(touch.clientX, touch.clientY);
+    e.preventDefault();
+  }, { passive:false });
+  window.addEventListener('touchend', pointerUp);
+  window.addEventListener('touchcancel', pointerUp);
+
+  storeBtn.addEventListener('click', () => {
+    if (idleMode === 'stored'){
+      idleMode = 'free';
+      swords.forEach(s => { s.stowed = false; });
+      resetModeButtons();
+    } else {
+      idleMode = 'stored';
+      swords.forEach(s => { s.stowed = false; });
+      resetModeButtons();
+      storeBtn.classList.add('active');
+      storeBtn.textContent = '🎒 Xuất Kiếm';
+    }
+    updateStateTag();
+  });
+
+  changeFormBtn.addEventListener('click', () => {
+    if (idleMode === 'formation'){
+      idleMode = 'free';
+      changeFormBtn.classList.remove('active');
+    } else {
+      idleMode = 'formation';
+      storeBtn.classList.remove('active'); storeBtn.textContent = '🎒 Túi Trữ Vật';
+      swords.forEach(s => { s.stowed = false; });
+      changeFormBtn.classList.add('active');
+    }
+    updateStateTag();
+  });
+
+  countBtn.addEventListener('click', () => {
+    countIndex = (countIndex + 1) % COUNT_MODES.length;
+    activeCount = COUNT_MODES[countIndex];
+    swordCountEl.textContent = activeCount;
+    countBtn.textContent = '⚔ ' + activeCount + ' Kiếm';
+  });
+
+  illusionBtn.addEventListener('click', () => {
+    illusionOn = !illusionOn;
+    illusionBtn.classList.toggle('active', illusionOn);
+  });
+
+  lightningBtn.addEventListener('click', () => {
+    lightningOn = !lightningOn;
+    lightningBtn.classList.toggle('active', lightningOn);
+  });
+
+  let lightnings = [];
+  function spawnLightning(x, y, dirAngle){
+    const segs = 4 + Math.floor(Math.random()*2);
+    const points = [{x,y}];
+    let curX = x, curY = y;
+    const totalLen = 30 + Math.random()*44;
+    const segLen = totalLen/segs;
+    for (let k=0; k<segs; k++){
+      const jitterAngle = dirAngle + (Math.random()-0.5)*0.9;
+      curX += Math.cos(jitterAngle)*segLen;
+      curY += Math.sin(jitterAngle)*segLen;
+      points.push({x:curX, y:curY});
+    }
+    lightnings.push({ points, life: 9, maxLife: 9 });
+  }
+  function drawLightnings(){
+    ctx.save();
+    for (let i=lightnings.length-1; i>=0; i--){
+      const l = lightnings[i];
+      const a = l.life/l.maxLife;
+      ctx.globalAlpha = a;
+      ctx.strokeStyle = '#ffe27a';
+      ctx.shadowColor = 'rgba(255,220,110,0.9)';
+      ctx.shadowBlur = 13;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      l.points.forEach((p, idx) => { if (idx===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+      ctx.stroke();
+      l.life--;
+      if (l.life <= 0) lightnings.splice(i,1);
+    }
+    ctx.restore();
+  }
+
+  function drawSword(x, y, angle, length, width, palette, alphaMul){
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+
+    const bladeBase = -length*0.06;
+    const tipX = length*0.62;
+
+    const grad = ctx.createLinearGradient(bladeBase, 0, tipX, 0);
+    grad.addColorStop(0, palette.edge);
+    grad.addColorStop(0.45, palette.core);
+    grad.addColorStop(1, palette.core);
+
+    ctx.globalAlpha = alphaMul;
+    ctx.shadowColor = palette.glow;
+    ctx.shadowBlur = 12;
+
+    ctx.beginPath();
+    ctx.moveTo(tipX, 0);
+    ctx.lineTo(bladeBase, -width*0.5);
+    ctx.lineTo(bladeBase, width*0.5);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = alphaMul * 0.85;
+    ctx.strokeStyle = palette.vein;
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(tipX - length*0.04, 0);
+    ctx.lineTo(bladeBase + length*0.02, 0);
+    ctx.stroke();
+
+    ctx.globalAlpha = alphaMul;
+    ctx.fillStyle = palette.vein;
+    ctx.fillRect(bladeBase - length*0.03, -width*0.42, length*0.03, width*0.84);
+
+    const gripLen = length*0.44;
+    const gripWidth = width*0.34;
+    ctx.globalAlpha = alphaMul * 0.92;
+    ctx.fillStyle = palette.edge;
+    ctx.fillRect(bladeBase - length*0.03 - gripLen, -gripWidth*0.5, gripLen, gripWidth);
+
+    ctx.beginPath();
+    ctx.arc(bladeBase - length*0.03 - gripLen, 0, gripWidth*0.55, 0, Math.PI*2);
+    ctx.fillStyle = palette.vein;
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function frame(){
+    t += 1;
+    const timeSec = t / 60;
+
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(5,8,10,0.20)';
+    ctx.fillRect(0, 0, W, H);
+
+    if (dragging){
+      const rGlow = 30 + Math.sin(timeSec*4)*4;
+      const g = ctx.createRadialGradient(mx, my, 0, mx, my, rGlow);
+      g.addColorStop(0, 'rgba(111,191,95,0.45)');
+      g.addColorStop(1, 'rgba(111,191,95,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(mx, my, rGlow, 0, Math.PI*2);
+      ctx.fill();
+    }
+
+    const minDim = Math.min(W, H);
+    const cx = W/2, cy = H/2;
+    const pouchRect = storeBtn.getBoundingClientRect();
+    const pouchX = pouchRect.left + pouchRect.width/2;
+    const pouchY = pouchRect.top + pouchRect.height/2;
+
+    const idleMaxSpeed = 3.4, idleMaxForce = 0.22;
+    const convergeMaxSpeed = 8.5, convergeMaxForce = 0.9;
+    const storedMaxSpeed = 5.5, storedMaxForce = 0.5;
+    const formationMaxSpeed = 6.2, formationMaxForce = 0.42;
+
+    for (let i = 0; i < activeCount; i++){
+      const s = swords[i];
+      let desiredX, desiredY, maxSpeed, maxForce;
+      let formationFacing = null;
+
+      if (dragging){
+        s.flingActive = false;
+        const orbitAngle = s.orbitAngle0 + timeSec * s.orbitSpeed * 1.7
+                          + noise1D(timeSec*0.9, s.seedB) * s.angleNoiseAmp;
+        const radius = Math.max(24, s.orbitRadius*0.5 + noise1D(timeSec*0.5, s.seedA) * s.radiusNoiseAmp);
+        const targetX = mx + Math.cos(orbitAngle) * radius;
+        const targetY = my + Math.sin(orbitAngle) * radius;
+        let dX = (targetX - s.x) * 0.14, dY = (targetY - s.y) * 0.14;
+        [dX, dY] = clampMag(dX, dY, convergeMaxSpeed);
+        desiredX = dX; desiredY = dY;
+        maxSpeed = convergeMaxSpeed; maxForce = convergeMaxForce;
+      } else if (s.flingActive){
+        desiredX = s.flingDirX * s.flingSpeed;
+        desiredY = s.flingDirY * s.flingSpeed;
+        maxSpeed = s.flingSpeed;
+        maxForce = 0.6;
+        s.flingSpeed *= s.frictionFactor;
+        if (s.flingSpeed < 1.2) s.flingActive = false;
+      } else if (idleMode === 'stored'){
+        const jx = Math.cos(timeSec*0.8 + s.storeJitterSeed) * s.storeJitterR;
+        const jy = Math.sin(timeSec*0.9 + s.storeJitterSeed*1.3) * s.storeJitterR;
+        const targetX = pouchX + jx, targetY = pouchY + jy;
+        let dX = (targetX - s.x) * 0.16, dY = (targetY - s.y) * 0.16;
+        [dX, dY] = clampMag(dX, dY, storedMaxSpeed);
+        desiredX = dX; desiredY = dY;
+        maxSpeed = storedMaxSpeed; maxForce = storedMaxForce;
+        if (!s.stowed){
+          const distToPouch = Math.hypot(pouchX - s.x, pouchY - s.y);
+          if (distToPouch < 26) s.stowed = true;
+        }
+      } else if (idleMode === 'formation'){
+        const f = FORMATIONS[formationIndex].calc(i, timeSec, cx, cy, minDim, activeCount);
+        let dX = (f.x - s.x) * 0.13, dY = (f.y - s.y) * 0.13;
+        [dX, dY] = clampMag(dX, dY, formationMaxSpeed);
+        desiredX = dX; desiredY = dY;
+        maxSpeed = formationMaxSpeed; maxForce = formationMaxForce;
+        formationFacing = f.facing;
+      } else {
+        const margin = 60;
+        const wanderAngle = s.orbitAngle0 + noise1D(timeSec*0.12, s.seedA) * 3.2;
+        let idleDX = Math.cos(wanderAngle) * s.idleSpeed;
+        let idleDY = Math.sin(wanderAngle) * s.idleSpeed;
+        if (s.x < margin) idleDX += (margin - s.x) * 0.02;
+        if (s.x > W - margin) idleDX -= (s.x - (W - margin)) * 0.02;
+        if (s.y < margin) idleDY += (margin - s.y) * 0.02;
+        if (s.y > H - margin) idleDY -= (s.y - (H - margin)) * 0.02;
+        desiredX = idleDX; desiredY = idleDY;
+        maxSpeed = idleMaxSpeed; maxForce = idleMaxForce;
+      }
+
+      let steerX = desiredX - s.vx, steerY = desiredY - s.vy;
+      [steerX, steerY] = clampMag(steerX, steerY, maxForce);
+      s.vx += steerX; s.vy += steerY;
+      [s.vx, s.vy] = clampMag(s.vx, s.vy, maxSpeed);
+
+      s.x += s.vx; s.y += s.vy;
+      if (s.x < -40) s.x = -40; if (s.x > W+40) s.x = W+40;
+      if (s.y < -40) s.y = -40; if (s.y > H+40) s.y = H+40;
+
+      const speedMag = Math.hypot(s.vx, s.vy);
+      if (formationFacing !== null && speedMag < 0.7){
+        let diff = formationFacing - s.angle;
+        while (diff > Math.PI) diff -= Math.PI*2;
+        while (diff < -Math.PI) diff += Math.PI*2;
+        s.angle += diff * 0.15;
+      } else if (speedMag > 0.05){
+        const targetFacing = Math.atan2(s.vy, s.vx);
+        let diff = targetFacing - s.angle;
+        while (diff > Math.PI) diff -= Math.PI*2;
+        while (diff < -Math.PI) diff += Math.PI*2;
+        s.angle += diff * 0.25;
+      }
+
+      const chance = 0.004 + Math.min(speedMag, 10) * 0.0009;
+      if (lightningOn && Math.random() < chance){
+        const tipX = s.x + Math.cos(s.angle) * s.style.length * 0.62;
+        const tipY = s.y + Math.sin(s.angle) * s.style.length * 0.62;
+        spawnLightning(tipX, tipY, s.angle + (Math.random()-0.5)*0.6);
+        if (Math.random() < 0.35){
+          const hiltX = s.x - Math.cos(s.angle) * s.style.length * 0.4;
+          const hiltY = s.y - Math.sin(s.angle) * s.style.length * 0.4;
+          spawnLightning(hiltX, hiltY, s.angle + Math.PI + (Math.random()-0.5)*0.8);
+        }
+      }
+
+      const isHidden = (idleMode === 'stored' && !dragging && !s.flingActive && s.stowed);
+      if (!isHidden){
+        const palette = PALETTES[s.style.paletteIdx];
+        const flicker = s.flicker + Math.sin(timeSec*3 + i)*0.08;
+        const lenMul = dragging ? 1.1 : 1;
+        const alphaNow = Math.min(1, flicker);
+
+        if (illusionOn){
+          for (let k = 0; k < 2; k++){
+            const side = k === 0 ? 1 : -1;
+            const phase = timeSec*1.5 + s.seedC*0.01 + k*2.4;
+            const dist = 16 + Math.sin(phase)*7;
+            const perpAngle = s.angle + (Math.PI/2)*side;
+            const ix = s.x + Math.cos(perpAngle)*dist;
+            const iy = s.y + Math.sin(perpAngle)*dist;
+            const iAngle = s.angle + Math.sin(phase*0.8)*0.2;
+            drawSword(ix, iy, iAngle, s.style.length * lenMul, s.style.width, palette, alphaNow * 0.32);
+          }
+        }
+
+        drawSword(s.x, s.y, s.angle, s.style.length * lenMul, s.style.width, palette, alphaNow);
+      }
+    }
+
+    drawLightnings();
+
+    requestAnimationFrame(frame);
+  }
+
+  const handBtn = document.getElementById('handBtn');
+  const handPanel = document.getElementById('handPanel');
+  const handVideo = document.getElementById('handVideo');
+  const handOverlay = document.getElementById('handOverlay');
+  const handOverlayCtx = handOverlay.getContext('2d');
+  const handStatus = document.getElementById('handStatus');
+
+  const HAND_CONNECTIONS = [
+    [0,1],[1,2],[2,3],[3,4],
+    [0,5],[5,6],[6,7],[7,8],
+    [5,9],[9,10],[10,11],[11,12],
+    [9,13],[13,14],[14,15],[15,16],
+    [13,17],[17,18],[18,19],[19,20],
+    [0,17]
+  ];
+
+  let handLandmarker = null;
+  let handStream = null;
+  let handTrackingOn = false;
+  let handRAFId = null;
+  let lastGesture = 'none';
+  let pointingActive = false;
+
+  function enterFormation(){
+    idleMode = 'formation';
+    storeBtn.classList.remove('active'); storeBtn.textContent = '🎒 Túi Trữ Vật';
+    swords.forEach(s => { s.stowed = false; });
+    changeFormBtn.classList.add('active');
+    updateStateTag();
+  }
+  function enterStored(){
+    idleMode = 'stored';
+    swords.forEach(s => { s.stowed = false; });
+    resetModeButtons();
+    storeBtn.classList.add('active');
+    storeBtn.textContent = '🎒 Xuất Kiếm';
+    updateStateTag();
+  }
+
+  function handDist(a, b){ return Math.hypot(a.x - b.x, a.y - b.y); }
+  function fingerExtended(lm, tipI, pipI, mcpI){
+    const wrist = lm[0];
+    return handDist(wrist, lm[tipI]) > handDist(wrist, lm[pipI]) * 1.08
+        && handDist(wrist, lm[tipI]) > handDist(wrist, lm[mcpI]) * 1.18;
+  }
+  
+  function detectGesture(lm){
+    const idx = fingerExtended(lm, 8, 6, 5);
+    const mid = fingerExtended(lm, 12, 10, 9);
+    const ring = fingerExtended(lm, 16, 14, 13);
+    const pinky = fingerExtended(lm, 20, 18, 17);
+    if (idx && mid && !ring && !pinky) return 'point';   // 2 ngón trỏ+giữa
+    if (idx && mid && ring && !pinky) return 'three';    // 3 ngón (trỏ, giữa, áp út)
+    if (idx && mid && ring && pinky) return 'palm';      // xòe 5 ngón
+    if (!idx && !mid && !ring && !pinky) return 'fist';  // nắm tay
+    return 'none';
+  }
+
+  function drawHandSkeleton(lm){
+    const w = handOverlay.width, h = handOverlay.height;
+    handOverlayCtx.lineWidth = 2;
+    handOverlayCtx.strokeStyle = 'rgba(227,180,74,0.9)';
+    handOverlayCtx.shadowColor = 'rgba(111,191,95,0.6)';
+    handOverlayCtx.shadowBlur = 4;
+    handOverlayCtx.beginPath();
+    HAND_CONNECTIONS.forEach(([a, b]) => {
+      const pa = lm[a], pb = lm[b];
+      handOverlayCtx.moveTo(pa.x * w, pa.y * h);
+      handOverlayCtx.lineTo(pb.x * w, pb.y * h);
+    });
+    handOverlayCtx.stroke();
+    handOverlayCtx.shadowBlur = 0;
+    handOverlayCtx.fillStyle = 'rgba(205,238,176,0.95)';
+    lm.forEach(p => {
+      handOverlayCtx.beginPath();
+      handOverlayCtx.arc(p.x * w, p.y * h, 2.4, 0, Math.PI*2);
+      handOverlayCtx.fill();
+    });
+  }
+
+  async function initHandLandmarker(){
+    const { HandLandmarker, FilesetResolver } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');
+    const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    handLandmarker = await HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+        delegate: 'GPU'
+      },
+      runningMode: 'VIDEO',
+      numHands: 1
+    });
+  }
+
+  function handLoop(){
+    if (!handTrackingOn) return;
+    handRAFId = requestAnimationFrame(handLoop);
+    if (handVideo.readyState < 2) return;
+
+    if (handOverlay.width !== handVideo.videoWidth && handVideo.videoWidth){
+      handOverlay.width = handVideo.videoWidth;
+      handOverlay.height = handVideo.videoHeight;
+    }
+
+    let result;
+    try{
+      result = handLandmarker.detectForVideo(handVideo, performance.now());
+    } catch(err){ return; }
+
+    handOverlayCtx.clearRect(0, 0, handOverlay.width, handOverlay.height);
+
+    if (result && result.landmarks && result.landmarks.length > 0){
+      const lm = result.landmarks[0];
+      drawHandSkeleton(lm);
+      const gesture = detectGesture(lm);
+
+      const useTip = gesture === 'point';
+      const nx = useTip ? (lm[8].x + lm[12].x) / 2 : lm[9].x;
+      const ny = useTip ? (lm[8].y + lm[12].y) / 2 : lm[9].y;
+      
+      // Đảo ngược trục X để khớp với thao tác tay thực tế
+      const screenX = (1 - nx) * W;
+      const screenY = ny * H;
+
+      if (gesture === 'point'){
+        if (!pointingActive){ pointerDown(screenX, screenY); pointingActive = true; }
+        else pointerMove(screenX, screenY);
+      } else if (pointingActive){
+        pointerUp();
+        pointingActive = false;
+      }
+
+      if (gesture !== lastGesture){
+        if (gesture === 'palm') enterFormation();
+        else if (gesture === 'fist') enterStored();
+        else if (gesture === 'three') {
+          illusionOn = !illusionOn; // Bật/tắt trạng thái
+          illusionBtn.classList.toggle('active', illusionOn); // Cập nhật nút UI
+        }
+        lastGesture = gesture;
+      }
+
+      handStatus.textContent = gesture === 'point' ? '☝️ Hội Tụ Kiếm'
+                              : gesture === 'palm'  ? '✋ Trận Pháp'
+                              : gesture === 'fist'  ? '✊ Nhập Túi Trữ Vật'
+                              : gesture === 'three' ? '👻 Kích hoạt Huyễn Hóa'
+                              : '🖐 Đang nhận diện cử chỉ...';
+    } else {
+      if (pointingActive){ pointerUp(); pointingActive = false; }
+      lastGesture = 'none';
+      handStatus.textContent = 'Không thấy tay trong khung hình';
+    }
+  }
+
+  async function startHandTracking(){
+    handStatus.textContent = 'Đang khởi động camera...';
+    handPanel.classList.add('show');
+    handBtn.classList.add('active');
+    handBtn.textContent = '📷 Tắt Camera';
+    try{
+      if (!handLandmarker) await initHandLandmarker();
+      handStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 320, height: 240 }, audio: false });
+      handVideo.srcObject = handStream;
+      await handVideo.play();
+      handTrackingOn = true;
+      handStatus.textContent = 'Sẵn sàng — đưa tay vào khung hình';
+      handLoop();
+    } catch(err){
+      handStatus.textContent = 'Không mở được camera' + (err && err.message ? (': ' + err.message) : '');
+      handTrackingOn = false;
+      handBtn.classList.remove('active');
+      handBtn.textContent = '📷 Ngự Kiếm (Camera)';
+    }
+  }
+
+  function stopHandTracking(){
+    handTrackingOn = false;
+    handBtn.classList.remove('active');
+    handBtn.textContent = '📷 Ngự Kiếm (Camera)';
+    handPanel.classList.remove('show');
+    if (handRAFId) cancelAnimationFrame(handRAFId);
+    if (handStream){ handStream.getTracks().forEach(tr => tr.stop()); handStream = null; }
+    handVideo.srcObject = null;
+    if (pointingActive){ pointerUp(); pointingActive = false; }
+    lastGesture = 'none';
+  }
+
+  handBtn.addEventListener('click', () => {
+    if (handTrackingOn) stopHandTracking(); else startHandTracking();
+  });
+
+  updateStateTag();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
