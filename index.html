@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Đại Canh Kiếm Trận - Đơn Thủ Đại Kiếm</title>
+<title>Đại Canh Kiếm Trận - Đơn Thủ Hoàn Chỉnh</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Serif+SC:wght@400;600;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -219,7 +219,7 @@
     </div>
     <div class="bottom-block">
       <div class="footer-row">
-        <p class="instruction"><b>Ngự kiếm bằng 1 Tay (Camera Mobile):</b> Giơ <b>2 ngón</b> = Hội tụ kiếm. Giơ <b>3 ngón</b> = Bật/tắt Huyễn Hóa. <b>NẮM TAY LẠI</b> = Toàn bộ kiếm hợp thể thành một cây <b>ĐẠI KIẾM</b> khổng lồ!</p>
+        <p class="instruction"><b>Ngự kiếm đơn thủ (Camera):</b> Giơ <b>2 ngón</b> = Hội tụ kiếm trận. Giơ <b>3 ngón</b> = Kích hoạt Huyễn Hóa. <b>NẮM TAY LẠI</b> = Hợp thể vạn kiếm thành thanh <b>ĐẠI KIẾM</b> khổng lồ chĩa thẳng lên trời!</p>
         <div class="state-tag" id="stateTag">TỰ DO</div>
       </div>
       <div class="controls">
@@ -351,7 +351,6 @@
   let illusionOn = false;
   let lightningOn = true;
 
-  // Đối tượng quản lý toạ độ tay đơn
   let rightHandPos = null; 
 
   function resetModeButtons(){
@@ -608,17 +607,15 @@
       let customLength = s.style.length;
       let customWidth = s.style.width;
 
-      // CHẾ ĐỘ: HỢP THỂ ĐẠI KIẾM THẲNG ĐỨNG (Khi 1 tay nắm lại)
       if (isSingleMegaSword) {
         s.flingActive = false;
 
-        const baseAngle = -Math.PI / 2; // Hướng kiếm chĩa thẳng đứng lên trời
-        const distance = 260; // Độ dài tổng thể của chuỗi đại kiếm
+        const baseAngle = -Math.PI / 2; 
+        const distance = 260; 
 
         const offsetRatio = (i / activeCount); 
         const swordDist = offsetRatio * distance; 
 
-        // Gốc của Đại Kiếm neo theo tọa độ nắm tay của bạn
         const tx = rightHandPos.x + Math.cos(baseAngle) * swordDist;
         const ty = rightHandPos.y + Math.sin(baseAngle) * swordDist;
 
@@ -801,12 +798,12 @@
     const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
     handLandmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
-        // Sử dụng mô hình di động siêu nhẹ để camera tracking cực mượt
-        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/lite/1/hand_landmarker.task',
+        // Sửa lỗi 404: Trả về đường dẫn CDN float16 chuẩn xác của Google
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
         delegate: 'GPU'
       },
       runningMode: 'VIDEO',
-      numHands: 1 // Giới hạn chỉ nhận diện 1 tay để tăng tốc độ phần cứng
+      numHands: 1 
     });
   }
 
@@ -840,14 +837,12 @@
 
       rightHandPos = { x: screenX, y: screenY, gesture: gesture };
 
-      // Chặn trạng thái lặp frame liên tục cho cử chỉ 3 ngón
       if (gesture === 'three' && lastGesture !== 'three') {
         illusionOn = !illusionOn;
         illusionBtn.classList.toggle('active', illusionOn);
       }
       lastGesture = gesture;
 
-      // Cập nhật text trạng thái UI
       if (gesture === 'fist') {
         handStatus.textContent = '⚔️ HỢP THỂ ĐẠI KIẾM';
       } else if (gesture === 'point') {
