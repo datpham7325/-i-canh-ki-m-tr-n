@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Đại Canh Kiếm Trận - Song Thủ Fix</title>
+<title>Đại Canh Kiếm Trận - Song Thủ Mobile Fix</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Serif+SC:wght@400;600;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -352,7 +352,6 @@
   let illusionOn = false;
   let lightningOn = true;
 
-  // Quản lý toạ độ song thủ toàn cục
   let rightHandPos = null; 
   let leftHandPos = null;  
   let isMegaSword = false;
@@ -835,11 +834,14 @@
     const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
     handLandmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+        // Fix: Sử dụng mô hình lite chuyên dụng cho Mobile để nhận diện ổn định cả 2 tay
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/lite/1/hand_landmarker.task',
         delegate: 'GPU'
       },
       runningMode: 'VIDEO',
-      numHands: 2 
+      numHands: 2,
+      minHandDetectionConfidence: 0.4, // Tăng cấu hình nhạy bắt tay trên Mobile
+      minHandPresenceConfidence: 0.4
     });
   }
 
@@ -876,17 +878,15 @@
         tempHands.push({ x: screenX, y: screenY, gesture: gesture });
       });
 
-      // Sắp xếp động các tay theo toạ độ trục X màn hình thực tế (Tránh lỗi lật gương)
       tempHands.sort((a, b) => b.x - a.x);
 
       if (tempHands.length === 1) {
         rightHandPos = tempHands[0];
       } else if (tempHands.length >= 2) {
-        rightHandPos = tempHands[0]; // Tay nằm bên phải màn hình hơn
-        leftHandPos = tempHands[1];  // Tay nằm bên trái màn hình hơn
+        rightHandPos = tempHands[0]; 
+        leftHandPos = tempHands[1];  
       }
 
-      // Xử lý chống trùng lặp frame cho cử chỉ 3 ngón bật Huyễn Hóa
       let currentFrameGesture = rightHandPos ? rightHandPos.gesture : 'none';
       if (leftHandPos && leftHandPos.gesture === 'three') currentFrameGesture = 'three';
       if (rightHandPos && rightHandPos.gesture === 'three') currentFrameGesture = 'three';
@@ -897,7 +897,6 @@
       }
       lastGesture = currentFrameGesture;
 
-      // Kích hoạt chiêu thức song thủ phối hợp
       if (rightHandPos && leftHandPos && rightHandPos.gesture === 'fist' && leftHandPos.gesture === 'fist') {
         isMegaSword = true;
         handStatus.textContent = '⚔️ SONG THỦ HỢP THỂ ĐẠI KIẾM';
