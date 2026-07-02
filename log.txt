@@ -1,0 +1,10 @@
+dai-canh-kiem-tran/
+├── index.html         (55 dòng)  — khung HTML
+├── css/style.css       (184 dòng) — toàn bộ style
+└── js/
+    ├── scene.js         (276 dòng) — state, dom, utils, canvas setup,
+    │                                  dữ liệu/vẽ phi kiếm, đội hình,
+    │                                  tia sét, Đại Kiếm
+    ├── input.js          (334 dòng) — chuột/chạm, nút bấm UI,
+    │                                  nhận diện tay qua camera
+    └── main.js           (142 dòng) — vòng lặp render chính
