@@ -48,6 +48,14 @@ App.dom = {
 App.dom.ctx = App.dom.canvas.getContext('2d');
 App.dom.handOverlayCtx = App.dom.handOverlay.getContext('2d');
 
+/* ---------- Khởi tạo và tải hình ảnh kiem.png ---------- */
+App.swordImg = new Image();
+App.swordImg.src = 'kiem.png'; 
+App.swordImgLoaded = false;
+App.swordImg.onload = function() {
+  App.swordImgLoaded = true;
+};
+
 /* ---------- Hàm toán học tiện ích ---------- */
 
 App.utils = {
@@ -82,17 +90,18 @@ App.resize();
 App.state.mx = App.state.W/2; App.state.my = App.state.H/2;
 App.state.prevMx = App.state.mx; App.state.prevMy = App.state.my;
 
-/* ---------- Dữ liệu & vẽ phi kiếm (Theo mẫu ảnh thanh trúc kiếm lục) ---------- */
+/* ---------- Dữ liệu phi kiếm ---------- */
 
 App.PALETTES = [
-  { core:'#b4f099', edge:'#235c2e', vein:'#143d1d', guard:'#f3c04d', glow:'rgba(70,220,100,0.6)' },
-  { core:'#a3eb83', edge:'#1b4d24', vein:'#0f3015', guard:'#e0b23f', glow:'rgba(50,200,80,0.55)' },
-  { core:'#8fdf6c', edge:'#123a1a', vein:'#0a210e', guard:'#c99a34', glow:'rgba(40,180,65,0.5)' }
+  { glow:'rgba(70,220,100,0.6)' },
+  { glow:'rgba(50,200,80,0.55)' },
+  { glow:'rgba(40,180,65,0.5)' }
 ];
+
 App.STYLES = [
-  { length: 55, width: 3.6, paletteIdx: 0 },
-  { length: 48, width: 3.0, paletteIdx: 1 },
-  { length: 40, width: 2.4, paletteIdx: 2 }
+  { length: 160, width: 132, paletteIdx: 0 },
+  { length: 135, width: 110, paletteIdx: 1 },
+  { length: 110, width: 90,  paletteIdx: 2 }
 ];
 
 App.TOTAL = 72;
@@ -134,84 +143,36 @@ function calcConcentric(i, tSec, cx, cy, minDim, count){
   let ringIdx = i < ring0N ? 0 : (i < ring0N+ring1N ? 1 : 2);
   const within = ringIdx === 0 ? i : (ringIdx === 1 ? i-ring0N : i-ring0N-ring1N);
   const ringN = [ring0N, ring1N, ring2N][ringIdx];
-  const radii = [0.12,0.22,0.34], speeds = [0.5,-0.3,0.2];
+  
+  const radii = [0.22, 0.32, 0.44], speeds = [0.5, -0.3, 0.2];
   const angle = (within/ringN)*Math.PI*2 + tSec*speeds[ringIdx];
-  const r = radii[ringIdx]*minDim;
-  return { x: cx+Math.cos(angle)*r, y: cy+Math.sin(angle)*r, facing: angle };
+  const r = radii[ringIdx] * minDim + 30; 
+  
+  return { x: cx + Math.cos(angle) * r, y: cy + Math.sin(angle) * r, facing: angle };
 }
 App.FORMATIONS = [{ name: 'Đồng Tâm', calc: calcConcentric }];
 
-// Hàm vẽ kiếm được tinh chỉnh theo ảnh image_4fbba2.jpg (cán ngắn, xanh trúc)
+/* ---------- Hàm Vẽ Phi Kiếm Bằng Hình Ảnh kiem.png ---------- */
 App.drawSword = function drawSword(x, y, angle, length, width, palette, alphaMul){
+  if (!App.swordImgLoaded) return; 
+
   const ctx = App.dom.ctx;
   ctx.save();
+  
   ctx.translate(x, y);
-  ctx.rotate(angle);
-
-  const bladeBase = 0;
-  const tipX = length * 0.82;
-
-  // 1. Vẽ lưỡi kiếm màu xanh trúc gờ nổi
-  const grad = ctx.createLinearGradient(bladeBase, 0, tipX, 0);
-  grad.addColorStop(0, palette.edge);
-  grad.addColorStop(0.3, palette.core);
-  grad.addColorStop(0.7, palette.core);
-  grad.addColorStop(1, palette.edge);
+  ctx.rotate(angle + Math.PI / 2);
 
   ctx.globalAlpha = alphaMul;
   ctx.shadowColor = palette.glow;
-  ctx.shadowBlur = 10;
+  ctx.shadowBlur = 14; 
 
-  ctx.beginPath();
-  ctx.moveTo(tipX, 0);
-  ctx.lineTo(bladeBase, -width * 0.5);
-  ctx.lineTo(bladeBase, width * 0.5);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  // Các gờ phân đốt giả lập đốt trúc dọc thân kiếm
-  ctx.globalAlpha = alphaMul * 0.4;
-  ctx.strokeStyle = palette.vein;
-  ctx.lineWidth = 0.8;
-  for (let d = 1; d <= 4; d++) {
-    const dotX = bladeBase + (tipX - bladeBase) * (d * 0.2);
-    ctx.beginPath();
-    ctx.moveTo(dotX, -width * 0.4);
-    ctx.lineTo(dotX, width * 0.4);
-    ctx.stroke();
-  }
-
-  // Gờ trục chính giữa thanh kiếm
-  ctx.globalAlpha = alphaMul * 0.7;
-  ctx.beginPath();
-  ctx.moveTo(tipX - length * 0.05, 0);
-  ctx.lineTo(bladeBase, 0);
-  ctx.stroke();
-
-  // 2. Vẽ Hộ Thủ (Vàng Gold - Dẹt bầu dục theo hình mẫu)
-  ctx.globalAlpha = alphaMul;
-  ctx.fillStyle = palette.guard;
-  ctx.beginPath();
-  ctx.ellipse(bladeBase, 0, width * 0.4, width * 1.1, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.strokeStyle = palette.edge;
-  ctx.lineWidth = 0.5;
-  ctx.stroke();
-
-  // 3. Vẽ Cán Kiếm NGẮN (Đã sửa ngắn lại đáng kể cho đẹp và giống hình)
-  const gripLen = length * 0.16; 
-  const gripWidth = width * 0.45;
-  ctx.globalAlpha = alphaMul * 0.95;
-  ctx.fillStyle = palette.edge;
-  ctx.fillRect(bladeBase - gripLen, -gripWidth * 0.5, gripLen, gripWidth);
-
-  // Đốc kiếm nhỏ phía sau cán
-  ctx.fillStyle = palette.guard;
-  ctx.beginPath();
-  ctx.arc(bladeBase - gripLen, 0, gripWidth * 0.6, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.drawImage(
+    App.swordImg,
+    -width / 2,
+    -length * 0.22, 
+    width,
+    length
+  );
 
   ctx.restore();
 };
@@ -256,89 +217,78 @@ App.drawLightnings = function drawLightnings(){
   ctx.restore();
 };
 
-/* ---------- Đại Kiếm (Hội tụ / tách mượt mà theo tiến trình) ---------- */
-
+/* ---------- Đại Kiếm Bằng Hình Ảnh Khổng Lồ kiem.png ---------- */
 App.updateAndDrawGreatSword = function updateAndDrawGreatSword(){
   const s = App.state;
   
-  // Cập nhật tiến trình tích tụ (progress) mượt mà
   if (s.greatSwordActive) {
-    if (s.greatSwordProgress < 1) s.greatSwordProgress += 0.05; // Hội tụ vào
+    if (s.greatSwordProgress < 1) s.greatSwordProgress += 0.05;
   } else {
-    if (s.greatSwordProgress > 0) s.greatSwordProgress -= 0.05; // Rã trận ra
+    if (s.greatSwordProgress > 0) s.greatSwordProgress -= 0.05;
   }
 
-  if (s.greatSwordProgress <= 0.001) return;
+  if (s.greatSwordProgress <= 0.001 || !App.swordImgLoaded) return;
+
+  // Đo vận tốc dịch chuyển tức thời của tay phải/chuột ngự cự kiếm
+  const moveSpeed = Math.hypot(s.mouseVelX, s.mouseVelY);
+  
+  // TỐI ƯU ĐỘ NHẠY (FIXED AUDIO): Hạ ngưỡng vận tốc từ 14 xuống 2.5 để camera bắt tiếng vung kiếm nhạy hơn
+  if (s.greatSwordProgress > 0.9 && moveSpeed > 2.5) {
+    if (typeof App.playGreatSwordSound === 'function') {
+      App.playGreatSwordSound();
+    }
+  }
 
   const ctx = App.dom.ctx;
   ctx.save();
+  
   ctx.translate(s.greatSwordX, s.greatSwordY);
-  ctx.rotate(s.greatSwordAngle);
+  ctx.rotate(s.greatSwordAngle + Math.PI / 2);
 
-  // Kích thước Đại Kiếm biến đổi mượt mà dựa trên progress thay vì đột ngột xuất hiện
   const p = s.greatSwordProgress;
-  const len = 250 * p;
-  const width = 12 * p;
+  const len = 750 * p;
+  const width = 560 * p;
 
   ctx.shadowColor = 'rgba(111,255,120,0.7)';
-  ctx.shadowBlur = 40 * p;
+  ctx.shadowBlur = 70 * p;
   ctx.globalAlpha = p;
 
-  const bladeBase = 0;
-  const tipX = len * 0.85;
-
-  // Vẽ lưỡi Đại Kiếm xanh trúc theo phong cách đồng bộ ảnh mẫu
-  const grad = ctx.createLinearGradient(bladeBase, 0, tipX, 0);
-  grad.addColorStop(0, '#103317');
-  grad.addColorStop(0.3, '#a1eb81');
-  grad.addColorStop(0.7, '#ffffff');
-  grad.addColorStop(1, '#1b4d24');
-
-  ctx.beginPath();
-  ctx.moveTo(tipX, 0);
-  ctx.lineTo(bladeBase, -width * 0.5);
-  ctx.lineTo(bladeBase, width * 0.5);
-  ctx.closePath();
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  // Vẽ gờ trúc trên trục Đại Kiếm
-  ctx.strokeStyle = '#143d1d';
-  ctx.lineWidth = 2 * p;
-  for (let d = 1; d <= 5; d++) {
-    const dotX = bladeBase + (tipX - bladeBase) * (d * 0.16);
-    ctx.beginPath();
-    ctx.moveTo(dotX, -width * 0.4);
-    ctx.lineTo(dotX, width * 0.4);
-    ctx.stroke();
-  }
-
-  // Vân kiếm vàng dọc xương sống
-  ctx.strokeStyle = '#f3c04d';
-  ctx.lineWidth = 1.5 * p;
-  ctx.beginPath();
-  ctx.moveTo(tipX - len * 0.05, 0);
-  ctx.lineTo(bladeBase, 0);
-  ctx.stroke();
-
-  // Hộ thủ Đại Kiếm vàng dẹt giống hình mẫu
-  ctx.fillStyle = '#f3c04d';
-  ctx.beginPath();
-  ctx.ellipse(bladeBase, 0, width * 0.4, width * 1.25, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Cán Đại Kiếm ngắn cân đối
-  const gripLen = len * 0.18;
-  const gripWidth = width * 0.45;
-  ctx.fillStyle = '#103317';
-  ctx.fillRect(bladeBase - gripLen, -gripWidth * 0.5, gripLen, gripWidth);
-
-  // Đốc Đại Kiếm
-  ctx.fillStyle = '#f3c04d';
-  ctx.beginPath();
-  ctx.arc(bladeBase - gripLen, 0, gripWidth * 0.6, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.drawImage(
+    App.swordImg,
+    -width / 2,
+    -len * 0.78, 
+    width,
+    len
+  );
 
   ctx.restore();
+};
+
+/* ---------- Hệ thống Quản lý Âm thanh Trận pháp (Audio Pool) ---------- */
+App.audioPool = [];
+App.poolSize = 10; 
+
+for (let i = 0; i < App.poolSize; i++) {
+  const audio = new Audio('sword_cut.mp3');
+  audio.volume = 0.4; 
+  App.audioPool.push(audio);
+}
+
+App.playCutSound = function playCutSound() {
+  const availableAudio = App.audioPool.find(audio => audio.paused || audio.ended);
+  if (availableAudio) {
+    availableAudio.currentTime = 0; 
+    availableAudio.play().catch(() => {}); 
+  }
+};
+
+// ĐỐI TƯỢNG PHÁT ÂM THANH RIÊNG CHO ĐẠI KIẾM (FIXED GREATSWORD AUDIO)
+App.greatSwordAudio = new Audio('sword_cut.mp3');
+App.greatSwordAudio.volume = 0.85;       // Đẩy âm lượng cao hẳn để tạo độ uy lực khổng lồ
+App.greatSwordAudio.playbackRate = 0.70; // Hạ tốc độ phát xuống để âm thanh rít trầm hùng, dày và nặng hơn
+
+App.playGreatSwordSound = function playGreatSwordSound() {
+  // Không kiểm tra trạng thái nữa, cứ vung tay đạt tốc độ là ép tua về đầu và chém ngay lập tức [suy luận]
+  App.greatSwordAudio.currentTime = 0;
+  App.greatSwordAudio.play().catch(() => {});
 };
