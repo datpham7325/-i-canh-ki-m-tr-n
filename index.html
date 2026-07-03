@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Đại Canh Kiếm Trận</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=Noto+Serif+SC:wght@400;600;900&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<!-- Sửa lại đường dẫn chính xác nằm ngay thư mục gốc -->
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <!-- Xóa bỏ ký tự gạch chéo ngược bị lỗi -->
+  <div class="veil"></div>
+  <div class="hud">
+    <div class="top-row">
+      <div class="title-block">
+        <span class="zh">凡人修仙傳</span>
+        <span class="vn">ĐẠI CANH KIẾM TRẬN</span>
+      </div>
+      <div class="counter">
+        <div class="num" id="swordCount">72</div>
+        <div class="lbl">phi kiếm</div>
+      </div>
+    </div>
+    
+    <div class="bottom-block">
+      <div class="footer-row">
+        <p class="instruction"><b>Giữ chuột &amp; kéo</b> để triệu kiếm. Bật <b>Ngự Kiếm (Camera)</b>: <b>Tay phải 2 ngón</b>=hội tụ, <b>Tay phải xòe 5 + Tay trái 2 ngón</b>=kết trận tấn công vào tâm tay trái, <b>Tay phải xòe 5 độc lập</b>=trận pháp đồng tâm, <b>Tay phải nắm</b>=thu túi, <b>Cả 2 tay nắm</b> = **Đại Kiếm** (tất cả kiếm hội tụ thành 1 thanh lớn).</p>
+        <div class="state-tag" id="stateTag">TỰ DO</div>
+      </div>
+    </div>
+
+    <!-- Thanh controls nằm trên giao diện chính -->
+    <div class="controls">
+      <button id="storeBtn" class="ctrl-btn">🎒 Túi Trữ Vật</button>
+      <button id="changeFormBtn" class="ctrl-btn">☯ Trận Đồng Tâm</button>
+      <button id="countBtn" class="ctrl-btn">⚔ 72 Kiếm</button>
+      <button id="illusionBtn" class="ctrl-btn">👻 Huyễn Hóa</button>
+      <button id="lightningBtn" class="ctrl-btn active">⚡ Phóng Sét</button>
+      <button id="handBtn" class="ctrl-btn">📷 Ngự Kiếm (Camera)</button>
+    </div>
+  </div>
+  
+  <div class="hand-panel" id="handPanel">
+    <div class="hand-frame">
+      <video id="handVideo" autoplay playsinline muted></video>
+      <canvas id="handOverlay"></canvas>
+    </div>
+    <div class="hand-status" id="handStatus">Đang khởi động camera...</div>
+  </div>
+</div>
+
+<script src="js/scene.js"></script>
+<script src="js/input.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
