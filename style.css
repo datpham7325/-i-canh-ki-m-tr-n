@@ -1,4 +1,4 @@
-:root{
+:root {
   --void: #05080a;
   --bamboo-light: #cdeeb0;
   --bamboo-mid: #6fbf5f;
@@ -7,178 +7,329 @@
   --gold-bright: #ffe27a;
   --muted: #8fa08d;
 }
-*{ box-sizing: border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
-html, body{
-  width:100%; height:100%;
+
+* { 
+  box-sizing: border-box; 
+  margin: 0; 
+  padding: 0; 
+  -webkit-tap-highlight-color: transparent; 
+}
+
+html, body {
+  width: 100%; 
+  height: 100%;
   background: var(--void);
   overflow: hidden;
   font-family: 'Cormorant Garamond', serif;
   color: var(--bamboo-light);
-  -webkit-user-select: none; user-select: none;
+  -webkit-user-select: none; 
+  user-select: none;
   overscroll-behavior: none;
 }
-#stage{
-  position:relative;
-  width:100vw; height:100vh; height:100dvh;
+
+#stage {
+  position: relative;
+  width: 100vw; 
+  height: 100vh; 
+  height: 100dvh;
 }
-canvas{
-  position:absolute; inset:0;
-  display:block;
+
+canvas {
+  position: absolute; 
+  inset: 0;
+  display: block;
   cursor: crosshair;
   touch-action: none;
 }
-.veil{
-  position:absolute; inset:0;
-  pointer-events:none;
+
+.veil {
+  position: absolute; 
+  inset: 0;
+  pointer-events: none;
   background:
     radial-gradient(ellipse 60% 50% at 50% 40%, rgba(111,191,95,0.07), transparent 70%),
-    radial-gradient(ellipse 120% 100% at 50% 100%, rgba(0,0,0,0.55), transparent 60%);
+    radial-gradient(ellipse 120% 100% at 50% 20%, transparent, rgba(5,8,10,0.65));
 }
-.hud{
-  position:absolute; inset:0;
-  pointer-events:none;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  padding: max(3.5vh, env(safe-area-inset-top) + 14px) max(5vw, env(safe-area-inset-right) + 14px) max(3vh, env(safe-area-inset-bottom) + 14px) max(5vw, env(safe-area-inset-left) + 14px);
-  z-index: 5;
-  gap: 12px;
+
+/* --- HỆ THỐNG HUD HIỂN THỊ CHUNG --- */
+.hud {
+  position: absolute;
+  inset: 0;
+  padding: max(20px, env(safe-area-inset-top) + 10px) max(20px, env(safe-area-inset-right) + 10px) max(20px, env(safe-area-inset-bottom) + 10px) max(20px, env(safe-area-inset-left) + 10px);
+  display: block;
+  pointer-events: none;
 }
-.top-row{
-  display:flex; justify-content:space-between; align-items:flex-start;
-  gap: 10px; flex-wrap: wrap;
+
+/* Hàng trên cùng */
+.top-row {
+  position: absolute;
+  top: max(20px, env(safe-area-inset-top));
+  left: max(20px, env(safe-area-inset-left));
+  right: max(20px, env(safe-area-inset-right));
+  display: block;
 }
-.title-block{ display:flex; flex-direction:column; gap: 3px; min-width: 0; }
-.zh{
+
+.title-block {
+  float: left;
+  display: block;
+}
+
+.title-block .zh {
+  display: block;
   font-family: 'Noto Serif SC', serif;
   font-weight: 900;
-  font-size: clamp(14px, 2.4vw, 26px);
-  letter-spacing: 0.28em;
+  font-size: 14px;
   color: var(--muted);
-  opacity: 0.55;
-  white-space: nowrap;
+  letter-spacing: 0.4em;
+  line-height: 1.2;
 }
-.vn{
+
+.title-block .vn {
+  display: block;
   font-family: 'Cinzel', serif;
   font-weight: 600;
-  font-size: clamp(17px, 4.4vw, 38px);
-  letter-spacing: 0.08em;
-  background: linear-gradient(120deg, var(--bamboo-light) 15%, var(--bamboo-mid) 55%, var(--gold) 90%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 30px rgba(111,191,95,0.25);
-  line-height: 1.15;
+  font-size: clamp(16px, 4vw, 24px);
+  color: var(--gold);
+  text-shadow: 0 0 10px rgba(227,180,74,0.35);
+  letter-spacing: 0.05em;
+  margin-top: 2px;
 }
-.counter{ text-align:right; font-family:'Cinzel', serif; letter-spacing: 0.18em; flex-shrink:0; }
-.counter .num{
-  font-size: clamp(24px, 6vw, 50px);
-  color: var(--bamboo-light);
-  line-height: 1;
-  text-shadow: 0 0 22px rgba(227,180,74,0.35);
-  font-variant-numeric: tabular-nums;
+
+.counter {
+  float: right;
+  text-align: right;
+  background: rgba(10,16,12,0.45);
+  padding: 6px 14px;
+  border-radius: 4px;
+  border: 1px solid rgba(111,191,95,0.15);
+  backdrop-filter: blur(8px);
 }
-.counter .lbl{
-  font-size: 10px; color: var(--gold); letter-spacing: 0.3em; text-transform: uppercase;
-}
-.bottom-block{ display:flex; flex-direction:column; gap: 12px; align-items:center; }
-.footer-row{
-  display:flex; justify-content: space-between; align-items:flex-end; gap: 16px;
-  width: 100%;
-}
-.instruction{
-  font-size: clamp(11.5px, 2.6vw, 15px);
-  color: var(--muted);
-  letter-spacing: 0.02em;
-  max-width: min(62vw, 360px);
-  line-height: 1.42;
-  font-style: italic;
-}
-.instruction b{ color: var(--bamboo-light); font-style: normal; font-weight: 600; letter-spacing: 0.06em; }
-.state-tag{
+
+.counter .num {
   font-family: 'Cinzel', serif;
-  font-size: 10px;
-  letter-spacing: 0.2em;
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 600;
+  color: var(--gold-bright);
+  line-height: 1;
+}
+
+.counter .lbl {
+  font-size: 11px;
+  color: var(--muted);
   text-transform: uppercase;
-  color: var(--gold);
-  opacity: 0.9;
-  padding: 6px 12px;
-  border: 1px solid rgba(227,180,74,0.35);
+  letter-spacing: 0.1em;
+  margin-top: 1px;
+}
+
+/* Khối hiển thị thông tin phía dưới */
+.bottom-block {
+  position: absolute;
+  bottom: calc(max(20px, env(safe-area-inset-bottom)) + 65px);
+  left: max(20px, env(safe-area-inset-left));
+  right: max(20px, env(safe-area-inset-right));
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .bottom-block {
+    bottom: calc(max(15px, env(safe-area-inset-bottom)) + 120px);
+  }
+}
+
+.footer-row {
+  display: block;
+}
+
+.instruction {
+  float: left;
+  max-width: 55%;
+  font-size: clamp(11px, 2.2vw, 13px);
+  line-height: 1.5;
+  color: var(--muted);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.instruction b {
+  color: var(--bamboo-light);
+  font-weight: 500;
+}
+
+.state-tag {
+  float: right;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  letter-spacing: 0.15em;
+  padding: 4px 12px;
   border-radius: 2px;
-  transition: all 0.4s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.state-tag.active{
-  color: var(--void);
-  background: var(--bamboo-mid);
-  border-color: var(--bamboo-mid);
-  box-shadow: 0 0 24px rgba(111,191,95,0.55);
-}
-.controls{
-  pointer-events:auto;
-  display:flex; flex-wrap: wrap; justify-content:center; gap: 8px;
-  max-width: 100%;
-}
-.ctrl-btn{
-  pointer-events:auto;
-  cursor:pointer;
-  background: rgba(10,16,10,0.6);
-  border:1px solid rgba(227,180,74,0.4);
+  background: rgba(227,180,74,0.08);
+  border: 1px solid rgba(227,180,74,0.25);
   color: var(--gold);
-  font-family:'Cinzel',serif;
-  letter-spacing:0.1em;
-  text-transform:uppercase;
-  font-size: clamp(9.5px, 2.4vw, 12px);
-  padding: 10px 14px;
-  border-radius:3px;
+  transition: all 0.3s ease;
+}
+
+.state-tag.active {
+  background: rgba(235,90,70,0.15);
+  border-color: rgba(235,90,70,0.5);
+  color: #eb5a46;
+  box-shadow: 0 0 10px rgba(235,90,70,0.25);
+}
+
+@media (max-width: 768px) {
+  .instruction {
+    float: none;
+    max-width: 100%;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .state-tag {
+    float: none;
+    display: inline-block;
+    margin: 0 auto;
+  }
+  .footer-row {
+    text-align: center;
+  }
+}
+
+/* --- THANH ĐIỀU KHIỂN CHỨC NĂNG (CONTROLS) RESPONSIVE --- */
+.controls {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(20px, env(safe-area-inset-bottom));
+  z-index: 10;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  pointer-events: auto;
+  width: auto;
+  max-width: 90vw;
+}
+
+.ctrl-btn {
+  background: rgba(10,16,10,0.65);
+  border: 1px solid rgba(227,180,74,0.4);
+  color: var(--gold);
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.05em;
+  font-size: 12px;
+  padding: 10px 16px;
+  border-radius: 4px;
   transition: all .25s ease;
   backdrop-filter: blur(6px);
   white-space: nowrap;
+  cursor: pointer;
 }
-.ctrl-btn:hover{ background: rgba(227,180,74,0.14); box-shadow:0 0 16px rgba(227,180,74,0.35); }
-.ctrl-btn.active{
+
+.ctrl-btn:hover {
+  background: rgba(227,180,74,0.15);
+  box-shadow: 0 0 12px rgba(227,180,74,0.3);
+}
+
+.ctrl-btn.active {
   background: var(--gold);
   color: var(--void);
-  box-shadow:0 0 22px rgba(227,180,74,0.6);
+  box-shadow: 0 0 16px rgba(227,180,74,0.5);
+  font-weight: 600;
 }
-.hand-panel{
-  position:absolute;
-  right: max(4vw, env(safe-area-inset-right) + 12px);
-  bottom: max(3vh, env(safe-area-inset-bottom) + 12px);
+
+/* Cấu hình Grid mượt mà cho Điện thoại khi xoay dọc */
+@media (max-width: 768px) {
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: calc(100% - 30px);
+    max-width: 480px;
+    bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .ctrl-btn {
+    padding: 8px 4px;
+    font-size: 10.5px;
+    text-align: center;
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+
+@media (max-width: 360px) {
+  .controls {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* --- KHỐI CAMERA PANEL MEDIAPIPE (TÀNG HÌNH VIDEO) --- */
+.hand-panel {
+  position: absolute;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: calc(max(20px, env(safe-area-inset-bottom)) + 65px);
   z-index: 8;
-  width: 168px;
-  display:none;
-  flex-direction:column;
-  gap:6px;
-  pointer-events:none;
+  width: 160px;
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
 }
-.hand-panel.show{ display:flex; }
-.hand-frame{
-  position:relative;
-  width:100%;
-  aspect-ratio: 4/3;
-  border-radius:6px;
-  overflow:hidden;
-  border:1px solid rgba(227,180,74,0.45);
-  background:#000;
-  box-shadow: 0 0 26px rgba(0,0,0,0.5), 0 0 18px rgba(111,191,95,0.25);
+
+.hand-panel.show {
+  display: flex;
 }
-.hand-frame video, .hand-frame canvas{
-  position:absolute; inset:0;
-  width:100%; height:100%;
+
+.video-wrapper {
+  position: relative;
+  width: 100%;
+  padding-top: 75%; /* Tỉ lệ camera 4:3 chuẩn */
+  background: transparent; /* Loại bỏ nền đen thô cứng */
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(111,191,95,0.15); /* Thu nhỏ độ đậm của viền */
+}
+
+#handVideo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  transform: scaleX(-1);
+  transform: scaleX(-1); /* Lật gương góc nhìn */
+  opacity: 0; /* ẨN HOÀN TOÀN KHUNG HÌNH CAMERA QUAY ĐƯỢC */
 }
-.hand-status{
-  font-family:'Cinzel', serif;
-  font-size: 10.5px;
-  letter-spacing:0.08em;
-  text-align:center;
-  color: var(--gold);
-  background: rgba(5,8,10,0.55);
-  border:1px solid rgba(227,180,74,0.3);
-  border-radius:3px;
-  padding: 5px 6px;
+
+#handOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  transform: scaleX(-1);
+  /* Giữ nguyên hiển thị để vẽ xương tay phát sáng trên nền trong suốt */
+}
+
+.hand-status {
+  background: rgba(5,8,10,0.85);
+  border: 1px solid rgba(111,191,95,0.25);
+  color: var(--bamboo-light);
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 3px;
+  text-align: center;
+  line-height: 1.3;
   backdrop-filter: blur(4px);
+}
+
+/* Điều chỉnh vị trí camera trên Mobile */
+@media (max-width: 768px) {
+  .hand-panel {
+    right: max(15px, env(safe-area-inset-right));
+    bottom: auto;
+    top: calc(max(20px, env(safe-area-inset-top)) + 55px);
+    width: 110px;
+  }
+  .hand-status {
+    font-size: 9.5px;
+    padding: 3px 4px;
+  }
 }
